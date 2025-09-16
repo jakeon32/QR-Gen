@@ -43,7 +43,7 @@ const QRCodeGenerator: FC = () => {
     }
   }, [text]);
 
-  const handleDownload = () => {
+  const handleDownloadPNG = useCallback(() => {
     if (!qrCodeUrl) return;
     const link = document.createElement('a');
     link.href = qrCodeUrl;
@@ -51,7 +51,35 @@ const QRCodeGenerator: FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, [qrCodeUrl]);
+
+  const handleDownloadSVG = useCallback(async () => {
+    if (!text.trim()) return;
+
+    try {
+        const svgString = await QRCode.toString(text, {
+            type: 'svg',
+            width: 400,
+            margin: 2,
+            color: {
+                dark: '#000000FF',
+                light: '#FFFFFFFF',
+            },
+        });
+        const blob = new Blob([svgString], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'qrcode.svg';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error(err);
+        setError('Failed to generate SVG. Please try again.');
+    }
+  }, [text]);
   
   const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -107,13 +135,22 @@ const QRCodeGenerator: FC = () => {
               <div className="bg-white p-2 rounded-lg shadow-md">
                 <img src={qrCodeUrl} alt="Generated QR Code" className="w-64 h-64" />
               </div>
-              <button
-                onClick={handleDownload}
-                className="w-full mt-2 inline-flex justify-center items-center px-4 py-2 border border-slate-600 text-sm font-medium rounded-md text-slate-200 bg-slate-700 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-slate-500 transition-colors duration-200"
-              >
-                <DownloadIcon className="h-5 w-5 mr-2" />
-                Download PNG
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full mt-2">
+                <button
+                  onClick={handleDownloadPNG}
+                  className="w-full inline-flex justify-center items-center px-4 py-2 border border-slate-600 text-sm font-medium rounded-md text-slate-200 bg-slate-700 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-slate-500 transition-colors duration-200"
+                >
+                  <DownloadIcon className="h-5 w-5 mr-2" />
+                  Download PNG
+                </button>
+                 <button
+                  onClick={handleDownloadSVG}
+                  className="w-full inline-flex justify-center items-center px-4 py-2 border border-slate-600 text-sm font-medium rounded-md text-slate-200 bg-slate-700 hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-slate-500 transition-colors duration-200"
+                >
+                  <DownloadIcon className="h-5 w-5 mr-2" />
+                  Download SVG
+                </button>
+              </div>
             </div>
           )}
         </div>
